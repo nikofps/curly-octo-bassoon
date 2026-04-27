@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <title>NIKO</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+
+    <style>
+        /* CONFIGURAÇÃO GLOBAL - CURSOR PADRÃO */
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+            font-family: 'Inter', 'Segoe UI Emoji', sans-serif;
+        }
+
+        body { 
+            overflow: hidden; 
+            background: #000; 
+            color: #fff; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            position: relative;
+            height: 100vh;
+        }
+
+        /* TELA DE ENTRADA */
+        #enter-screen {
+            position: fixed;
+            inset: 0;
+            background: #000;
+            z-index: 9999;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 0.8s ease, visibility 0.8s;
+            cursor: pointer;
+        }
+
+        #enter-screen.hidden {
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        .enter-text {
+            font-size: 18px;
+            letter-spacing: 2px;
+            color: #fff;
+            text-transform: lowercase;
+            animation: pulse 2s infinite;
+            user-select: none;
+        }
+
+        @keyframes pulse { 0% { opacity: 0.4; } 50% { opacity: 1; } 100% { opacity: 0.4; } }
+
+        /* FUNDO E OVERLAYS */
+        .video-background { position: fixed; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: -3; }
+        .overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, .45); backdrop-filter: blur(2px); z-index: -2; }
+        body::after { content: ''; position: fixed; inset: 0; background: radial-gradient(circle, transparent 35%, rgba(0, 0, 0, .78) 100%); z-index: -1; pointer-events: none; }
+
+        .center { text-align: center; width: 100%; max-width: 900px; padding: 20px; animation: fade 1.2s ease; z-index: 1; }
+        @keyframes fade { from { opacity: 0; transform: translateY(25px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* CARD DE PERFIL */
+        .profile-card { 
+            margin: auto; width: 380px; max-width: 95%; padding: 18px; border-radius: 26px; 
+            display: flex; align-items: center; gap: 16px; 
+            background: rgba(255, 255, 255, .08); border: 1px solid rgba(255, 255, 255, .14); 
+            backdrop-filter: blur(18px); 
+        }
+        
+        .avatar-container { position: relative; width: 84px; height: 84px; flex-shrink: 0; }
+        .avatar { width: 76px; height: 76px; border-radius: 50%; object-fit: cover; background: #222; margin: 4px; }
+        .avatar-decoration { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 2; pointer-events: none; }
+        
+        .status-dot { position: absolute; right: 8px; bottom: 8px; width: 18px; height: 18px; background: #747f8d; border: 3px solid #111; border-radius: 50%; z-index: 3; }
+        
+        .activity-badge {
+            position: absolute;
+            top: -2px;
+            right: -2px;
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            display: none; 
+            justify-content: center;
+            align-items: center;
+            font-size: 12px;
+            color: white;
+            border: 3px solid #111;
+            z-index: 4;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+        }
+
+        .profile-info { text-align: left; overflow: hidden; flex: 1; }
+        .profile-info h2 { font-size: 20px; font-weight: 800; color: #fff; margin-bottom: 2px; }
+        .profile-info p { font-size: 13px; opacity: .8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        /* REDES SOCIAIS */
+        .socials { margin-top: 35px; display: flex; justify-content: center; gap: 24px; }
+        .socials a { font-size: 44px; text-decoration: none; transition: .25s; color: inherit; opacity: 0.9; cursor: pointer; }
+        .socials a:hover { transform: translateY(-5px) scale(1.1); opacity: 1; }
+        .discord { color: #5865F2; } .instagram { color: #ff2f92; } .tiktok { color: #fff; } .x { color: #f0f0f0; } .twitch { color: #9146FF; }
+
+        /* PLAYER DE MÚSICA DINÂMICO */
+        .player { margin: 60px auto 0; width: 650px; max-width: 95%; display: flex; align-items: center; gap: 18px; }
+        
+        .music-cover-container { 
+            width: 68px; height: 68px; border-radius: 12px; 
+            background: rgba(255, 255, 255, .15); 
+            display: flex; justify-content: center; align-items: center; 
+            font-size: 30px; overflow: hidden; flex-shrink: 0;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .music-cover-container img { width: 100%; height: 100%; object-fit: cover; display: none; }
+
+        .track { flex: 1; text-align: left; overflow: hidden; }
+        .track-title { font-size: 24px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .bar { margin-top: 8px; height: 4px; background: rgba(255, 255, 255, .18); border-radius: 50px; overflow: hidden; }
+        .progress { width: 0%; height: 100%; background: #fff; }
+        .time { display: flex; justify-content: space-between; font-size: 14px; opacity: .8; margin-top: 8px; }
+        .controls { display: flex; gap: 12px; font-size: 24px; }
+        .controls span { cursor: pointer; }
+
+        @media(max-width: 768px) { 
+            .player { flex-direction: column; align-items: flex-start; } 
+            .track { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="enter-screen">
+        <span class="enter-text">click to enter...</span>
+    </div>
+
+    <video id="bgVideo" class="video-background" loop playsinline>
+        <source src="https://r2.guns.lol/c03e5746-e4fd-4383-87e2-3ea5daf8cd97.mp4" type="video/mp4">
+    </video>
+
+    <div class="overlay"></div>
+
+    <div class="center">
+        <div class="profile-card">
+            <div class="avatar-container">
+                <img class="avatar" id="discordAvatar" src="">
+                <img class="avatar-decoration" id="discordDecoration" src="">
+                <div id="statusDot" class="status-dot"></div>
+                <div id="activityBadge" class="activity-badge"></div>
+            </div>
+            <div class="profile-info">
+                <h2 id="cardDisplayName">CARREGANDO...</h2>
+                <p id="discordActivity">buscando status...</p>
+            </div>
+        </div>
+
+        <div class="socials">
+            <a href="https://discord.com/channels/@me" target="_blank" class="discord"><i class="fab fa-discord"></i></a>
+            <a href="https://www.instagram.com/nikoz1n_" target="_blank" class="instagram"><i class="fab fa-instagram"></i></a>
+            <a href="https://www.tiktok.com/@eaejzn" target="_blank" class="tiktok"><i class="fab fa-tiktok"></i></a>
+            <a href="https://x.com/niikofps" target="_blank" class="x"><i class="fa-brands fa-x-twitter"></i></a>
+            <a href="https://www.twitch.tv/nikkog0d" target="_blank" class="twitch"><i class="fab fa-twitch"></i></a>
+        </div>
+
+        <div class="player">
+            <div class="music-cover-container" id="musicContainer">
+                <i class="fa-solid fa-music" id="defaultMusicIcon"></i>
+                <img src="" id="spotifyCover" alt="Capa Spotify">
+            </div>
+            <div class="track">
+                <div class="track-title" id="displayTrackTitle">Batman</div>
+                <div class="bar"><div id="progressBar" class="progress"></div></div>
+                <div class="time">
+                    <span id="currentTime">0:00</span>
+                    <span id="duration">0:00</span>
+                </div>
+            </div>
+            <div class="controls">
+                <span><i class="fa-solid fa-backward"></i></span>
+                <span id="playBtn"><i class="fa-solid fa-play"></i></span>
+                <span><i class="fa-solid fa-forward"></i></span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const video = document.getElementById('bgVideo');
+        const playBtn = document.getElementById('playBtn');
+        const icon = playBtn.querySelector('i');
+        const progressBar = document.getElementById('progressBar');
+        const currentTimeEl = document.getElementById('currentTime');
+        const durationEl = document.getElementById('duration');
+        const enterScreen = document.getElementById('enter-screen');
+
+        const spotifyCover = document.getElementById('spotifyCover');
+        const defaultMusicIcon = document.getElementById('defaultMusicIcon');
+        const displayTrackTitle = document.getElementById('displayTrackTitle');
+
+        // Lógica de Entrada
+        enterScreen.addEventListener('click', () => {
+            enterScreen.classList.add('hidden');
+            video.play();
+            icon.className = 'fa-solid fa-pause';
+        });
+
+        function formatTime(s) {
+            if (isNaN(s)) return "0:00";
+            const m = Math.floor(s / 60);
+            const sec = Math.floor(s % 60);
+            return `${m}:${sec < 10 ? '0' + sec : sec}`;
+        }
+
+        playBtn.addEventListener('click', () => {
+            if (video.paused) { video.play(); icon.className = 'fa-solid fa-pause'; }
+            else { video.pause(); icon.className = 'fa-solid fa-play'; }
+        });
+
+        video.addEventListener('timeupdate', () => {
+            if (video.duration) {
+                progressBar.style.width = (video.currentTime / video.duration) * 100 + '%';
+                currentTimeEl.innerText = formatTime(video.currentTime);
+            }
+        });
+
+        video.addEventListener('loadedmetadata', () => durationEl.innerText = formatTime(video.duration));
+
+        // LANYARD API
+        const DISCORD_ID = "1304077231143915530"; 
+
+        async function updateStatus() {
+            try {
+                const res = await fetch(`https://api.lanyard.rest/v1/users/${DISCORD_ID}`);
+                const { data, success } = await res.json();
+                if (!success) return;
+
+                const user = data.discord_user;
+                document.getElementById('cardDisplayName').textContent = user.global_name || user.username;
+                document.getElementById('discordAvatar').src = `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png?size=256`;
+
+                const decoImg = document.getElementById('discordDecoration');
+                if (user.avatar_decoration_data) {
+                    decoImg.src = `https://cdn.discordapp.com/avatar-decoration-presets/${user.avatar_decoration_data.asset}.png`;
+                    decoImg.style.display = 'block';
+                } else { decoImg.style.display = 'none'; }
+
+                const dot = document.getElementById('statusDot');
+                const colors = { online: '#43b581', idle: '#faa61a', dnd: '#f04747', offline: '#f04747' };
+                dot.style.background = colors[data.discord_status] || colors.offline;
+
+                const badge = document.getElementById('activityBadge');
+                const activityEl = document.getElementById('discordActivity');
+                badge.style.display = 'none';
+
+                // LÓGICA DO SPOTIFY NO PLAYER
+                if (data.listening_to_spotify) {
+                    // Badge do Perfil
+                    badge.style.display = 'flex';
+                    badge.style.background = '#1DB954'; 
+                    badge.innerHTML = '<i class="fa-solid fa-music"></i>';
+                    activityEl.innerText = `Ouvindo: ${data.spotify.song}`;
+
+                    // Player Dinâmico (NOVA ATUALIZAÇÃO)
+                    spotifyCover.src = data.spotify.album_art_url;
+                    spotifyCover.style.display = 'block';
+                    defaultMusicIcon.style.display = 'none';
+                    displayTrackTitle.innerText = data.spotify.song;
+                } else {
+                    // Reset do Player se não estiver no Spotify
+                    spotifyCover.style.display = 'none';
+                    defaultMusicIcon.style.display = 'block';
+                    displayTrackTitle.innerText = "Batman";
+
+                    // Atividades normais (Jogando/Streaming)
+                    if (data.activities && data.activities.length > 0) {
+                        const streaming = data.activities.find(a => a.type === 1);
+                        const gaming = data.activities.find(a => a.type === 0);
+
+                        if (streaming) {
+                            badge.style.display = 'flex';
+                            badge.style.background = '#593695';
+                            badge.innerHTML = '<i class="fa-solid fa-video"></i>';
+                            activityEl.innerText = `Transmitindo: ${streaming.name}`;
+                        } else if (gaming) {
+                            badge.style.display = 'flex';
+                            badge.style.background = '#23a559';
+                            badge.innerHTML = '<i class="fa-solid fa-gamepad"></i>';
+                            activityEl.innerText = `Jogando: ${gaming.name}`;
+                        } else {
+                            activityEl.innerText = data.discord_status;
+                        }
+                    } else {
+                        activityEl.innerText = data.discord_status;
+                    }
+                }
+            } catch (e) { console.log("Lanyard Sync..."); }
+        }
+
+        updateStatus();
+        setInterval(updateStatus, 5000); // Atualiza mais rápido (5s) para pegar a música logo
+    </script>
+</body>
+</html>
